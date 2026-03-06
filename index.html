@@ -2,901 +2,770 @@
 <html lang="nl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Krinkels × SEB Locatiekaart</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root {
-    --green: #2D6A4F;
-    --green-light: #40916C;
-    --green-pale: #D8F3DC;
-    --orange: #C1440E;
-    --cream: #F8F5F0;
-    --dark: #1B2B24;
-    --mid: #3A4A3E;
-    --radius-color: rgba(45, 106, 79, 0.12);
-    --radius-border: rgba(45, 106, 79, 0.5);
+    --k-dark:    #1E4229;
+    --k-mid:     #3A7D44;
+    --k-light:   #6BBF7B;
+    --k-pale:    #DCF0E0;
+    --k-surface: #F5F7F5;
+    --k-text:    #1A2B1C;
+    --k-muted:   #5A7060;
+    --k-red:     #C0392B;
+    --k-red-bg:  #FDECEA;
+    --k-white:   #FFFFFF;
+    --k-border:  #D0DDD2;
+    --k-work:    #C0580A;
+    --k-work-bg: #FEF3EC;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { font-family:'Inter',sans-serif; background:var(--k-surface); color:var(--k-text); height:100%; overflow:hidden; }
+  .app { display:flex; flex-direction:column; height:100dvh; height:100vh; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--dark);
-    color: var(--cream);
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+  /* ── HEADER ── */
+  header { display:flex; align-items:center; justify-content:space-between; padding:0 16px; height:56px; background:var(--k-dark); flex-shrink:0; z-index:1000; gap:12px; }
+  .header-brand { display:flex; align-items:center; gap:10px; min-width:0; }
+  .brand-leaf { width:32px; height:32px; background:var(--k-light); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .brand-text h1 { font-size:15px; font-weight:800; color:#fff; letter-spacing:-0.2px; white-space:nowrap; }
+  .brand-text .tagline { font-size:10px; color:rgba(255,255,255,0.5); margin-top:1px; white-space:nowrap; }
+  .header-stats { display:flex; gap:14px; flex-shrink:0; }
+  .hstat { text-align:right; }
+  .hstat-num { font-size:18px; font-weight:800; color:var(--k-light); line-height:1; }
+  .hstat-label { font-size:9px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:0.4px; }
+
+  /* ── LAYOUT ── */
+  .main { display:flex; flex:1; overflow:hidden; position:relative; }
+  #map { flex:1; z-index:1; }
+
+  /* ── SIDEBAR ── */
+  .sidebar { width:310px; background:var(--k-white); border-left:1px solid var(--k-border); display:flex; flex-direction:column; overflow:hidden; flex-shrink:0; z-index:10; }
+
+  /* sections */
+  .s-block { padding:10px 12px; border-bottom:1px solid var(--k-border); flex-shrink:0; }
+  .s-title  { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--k-muted); margin-bottom:7px; }
+
+  /* radius rows */
+  .radius-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .radius-icon { width:12px; height:12px; border-radius:2px; flex-shrink:0; }
+  .radius-lbl  { font-size:11px; font-weight:600; color:var(--k-text); flex:1; }
+  .radius-val  { font-size:14px; font-weight:800; min-width:48px; text-align:right; }
+  .r-green { color:var(--k-mid); }
+  .r-orange{ color:var(--k-work); }
+  .rslider {
+    -webkit-appearance:none; appearance:none; width:100%; height:4px; border-radius:2px;
+    background:var(--k-border); outline:none; cursor:pointer; margin-bottom:4px;
   }
+  .rslider.green::-webkit-slider-thumb  { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--k-mid);  cursor:pointer; border:2.5px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+  .rslider.orange::-webkit-slider-thumb { -webkit-appearance:none; width:18px; height:18px; border-radius:50%; background:var(--k-work); cursor:pointer; border:2.5px solid white; box-shadow:0 1px 4px rgba(0,0,0,0.2); }
+  .rslider.green::-moz-range-thumb  { width:18px; height:18px; border-radius:50%; background:var(--k-mid);  cursor:pointer; border:2.5px solid white; }
+  .rslider.orange::-moz-range-thumb { width:18px; height:18px; border-radius:50%; background:var(--k-work); cursor:pointer; border:2.5px solid white; }
+  .presets { display:flex; gap:3px; margin-bottom:4px; }
+  .pb { flex:1; padding:4px 0; border-radius:5px; border:1.5px solid var(--k-border); background:var(--k-surface); color:var(--k-muted); font-family:'Inter',sans-serif; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.13s; text-align:center; }
+  .pb:hover { border-color:var(--k-mid); color:var(--k-dark); }
+  .pb.g-active { background:var(--k-mid); border-color:var(--k-mid); color:#fff; }
+  .pb:hover.orange-pb { border-color:var(--k-work); color:var(--k-work); }
+  .pb.o-active { background:var(--k-work); border-color:var(--k-work); color:#fff; }
 
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 24px;
-    background: rgba(26, 26, 46, 0.95);
-    border-bottom: 1px solid rgba(82, 183, 136, 0.2);
-    z-index: 1000;
-    flex-shrink: 0;
+  /* filter tabs */
+  .filter-tabs { display:flex; gap:4px; margin-bottom:7px; }
+  .tab { flex:1; padding:6px 4px; border-radius:6px; border:1.5px solid var(--k-border); background:transparent; color:var(--k-muted); font-family:'Inter',sans-serif; font-size:10px; font-weight:600; cursor:pointer; transition:all 0.15s; text-align:center; }
+  .tab.active { background:var(--k-dark); border-color:var(--k-dark); color:#fff; }
+
+  /* search */
+  .search-box input { width:100%; background:var(--k-surface); border:1.5px solid var(--k-border); border-radius:8px; padding:7px 11px; color:var(--k-text); font-family:'Inter',sans-serif; font-size:12px; outline:none; transition:border-color 0.15s; }
+  .search-box input:focus { border-color:var(--k-mid); }
+  .search-box input::placeholder { color:var(--k-muted); }
+
+  /* scrollable middle */
+  .panel-scroll { flex:1; overflow-y:auto; }
+  .panel-scroll::-webkit-scrollbar { width:4px; }
+  .panel-scroll::-webkit-scrollbar-thumb { background:var(--k-border); border-radius:2px; }
+
+  /* toggle rows */
+  .toggle-section { padding:6px 8px; border-bottom:1px solid var(--k-border); }
+  .toggle-section-title { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--k-muted); padding:6px 6px 3px; }
+  .toggle-row { display:flex; align-items:center; gap:8px; padding:7px 7px; border-radius:7px; cursor:pointer; transition:background 0.12s; user-select:none; }
+  .toggle-row:hover { background:var(--k-surface); }
+  .t-swatch { width:13px; height:13px; border-radius:3px; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.1); }
+  .t-label  { font-size:12px; font-weight:600; color:var(--k-text); flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .t-sub    { font-size:10px; color:var(--k-muted); margin-top:1px; }
+  .t-sw { width:30px; height:17px; border-radius:9px; background:var(--k-border); position:relative; flex-shrink:0; transition:background 0.2s; }
+  .t-sw::after { content:''; position:absolute; top:2.5px; left:2.5px; width:12px; height:12px; border-radius:50%; background:white; transition:transform 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-row.on  .t-sw { background:var(--k-mid); }
+  .toggle-row.on  .t-sw::after { transform:translateX(13px); }
+  .toggle-row.work-row.on .t-sw { background:var(--k-work); }
+  .toggle-row.off .t-label { color:var(--k-muted); }
+  .toggle-row.off .t-swatch { opacity:0.3; }
+
+  /* seb list */
+  .seb-list { padding:4px 8px 8px; }
+  .sec-label { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.8px; color:var(--k-muted); padding:8px 6px 3px; }
+  .loc-row { display:flex; align-items:center; gap:8px; padding:8px 7px; border-radius:7px; cursor:pointer; transition:background 0.12s; }
+  .loc-row:hover { background:var(--k-pale); }
+  .l-dot  { width:10px; height:10px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.1); }
+  .l-name { font-size:12px; font-weight:500; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .l-badge { font-size:9px; padding:2px 5px; border-radius:9px; font-weight:700; white-space:nowrap; flex-shrink:0; }
+  .badge-in  { background:#E8F5E9; color:#2E7D32; }
+  .badge-out { background:var(--k-red-bg); color:var(--k-red); }
+  .badge-hq  { background:#E8F5E9; color:var(--k-dark); }
+  .badge-branch { background:#E8F5E9; color:var(--k-mid); }
+  .badge-work   { background:var(--k-work-bg); color:var(--k-work); }
+
+  /* legend */
+  .legend-bar { padding:8px 12px 10px; border-top:1px solid var(--k-border); flex-shrink:0; }
+  .legend-items { display:flex; flex-wrap:wrap; gap:5px 10px; }
+  .li { display:flex; align-items:center; gap:4px; font-size:10px; font-weight:500; }
+  .ld { width:9px; height:9px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.1); }
+  .ls { width:9px; height:9px; border-radius:2px; flex-shrink:0; }
+  .ldash { width:14px; height:0; flex-shrink:0; border-top:2px dashed; }
+
+  /* popup */
+  .leaflet-popup-content-wrapper { background:var(--k-white); border:1px solid var(--k-border); border-radius:10px; box-shadow:0 6px 24px rgba(30,66,41,0.15); padding:0; }
+  .leaflet-popup-content { margin:12px 14px; }
+  .leaflet-popup-tip { background:var(--k-white); }
+  .leaflet-popup-close-button { color:var(--k-muted)!important; top:6px!important; right:8px!important; }
+  .pt { font-size:13px; font-weight:800; color:var(--k-dark); padding-right:14px; margin-bottom:2px; }
+  .ptype { font-size:10px; text-transform:uppercase; letter-spacing:0.6px; color:var(--k-muted); font-weight:600; margin-bottom:6px; }
+  .pbody { font-size:12px; line-height:1.5; }
+  .pseb  { margin-top:5px; font-size:12px; font-weight:600; }
+  .pyes { color:#2E7D32; }
+  .pno  { color:var(--k-red); }
+
+  /* mobile */
+  .mobile-fab { display:none; position:absolute; bottom:20px; right:16px; z-index:500; width:52px; height:52px; border-radius:50%; background:var(--k-dark); border:none; color:#fff; font-size:20px; cursor:pointer; box-shadow:0 4px 16px rgba(30,66,41,0.4); align-items:center; justify-content:center; }
+  .sheet { display:none; position:absolute; bottom:0; left:0; right:0; z-index:600; background:var(--k-white); border-radius:18px 18px 0 0; box-shadow:0 -4px 24px rgba(30,66,41,0.18); max-height:82vh; flex-direction:column; transform:translateY(100%); transition:transform 0.3s cubic-bezier(0.32,0.72,0,1); }
+  .sheet.open { transform:translateY(0); }
+  .sheet-handle-row { display:flex; justify-content:center; padding:10px 0 2px; flex-shrink:0; }
+  .sheet-handle { width:36px; height:4px; background:var(--k-border); border-radius:2px; }
+  .sheet-overlay { display:none; position:absolute; inset:0; z-index:590; background:rgba(30,66,41,0.25); }
+
+  @media (max-width:640px) {
+    header { padding:0 12px; height:52px; }
+    .brand-text .tagline { display:none; }
+    .hstat:last-child { display:none; }
+    .sidebar { display:none; }
+    .mobile-fab { display:flex; }
+    .sheet { display:flex; }
+    .sheet-overlay { display:block; }
   }
-
-  .logo-block {
-    display: flex;
-    align-items: center;
-    gap: 16px;
+  @media (min-width:641px) {
+    .mobile-fab,.sheet,.sheet-overlay { display:none!important; }
   }
-
-  .logo-icon {
-    width: 38px;
-    height: 38px;
-    background: var(--green);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-  }
-
-  h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-    letter-spacing: -0.3px;
-  }
-
-  h1 span { color: var(--green-light); }
-
-  .subtitle {
-    font-size: 11px;
-    color: rgba(248,245,240,0.5);
-    margin-top: 1px;
-  }
-
-  .stats-bar {
-    display: flex;
-    gap: 20px;
-    align-items: center;
-  }
-
-  .stat {
-    text-align: right;
-  }
-
-  .stat-num {
-    font-family: 'Syne', sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--green-light);
-    line-height: 1;
-  }
-
-  .stat-label {
-    font-size: 10px;
-    color: rgba(248,245,240,0.5);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .stat-divider {
-    width: 1px;
-    height: 30px;
-    background: rgba(255,255,255,0.1);
-  }
-
-  .main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
-  }
-
-  #map {
-    flex: 1;
-  }
-
-  .sidebar {
-    width: 300px;
-    background: rgba(26, 26, 46, 0.98);
-    border-left: 1px solid rgba(82, 183, 136, 0.15);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .sidebar-header {
-    padding: 16px;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-  }
-
-  .sidebar-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--green-light);
-    margin-bottom: 10px;
-  }
-
-  .filter-tabs {
-    display: flex;
-    gap: 6px;
-  }
-
-  .tab {
-    flex: 1;
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: 1px solid rgba(255,255,255,0.1);
-    background: transparent;
-    color: rgba(248,245,240,0.6);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-    text-align: center;
-  }
-
-  .tab.active {
-    background: var(--green);
-    border-color: var(--green);
-    color: white;
-  }
-
-  .tab:hover:not(.active) {
-    border-color: var(--green-light);
-    color: var(--green-light);
-  }
-
-  .search-box {
-    margin: 10px 0 0;
-  }
-
-  .search-box input {
-    width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 6px;
-    padding: 8px 12px;
-    color: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    outline: none;
-  }
-
-  .search-box input:focus {
-    border-color: var(--green-light);
-  }
-
-  .search-box input::placeholder { color: rgba(248,245,240,0.3); }
-
-  .list-area {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px;
-  }
-
-  .list-area::-webkit-scrollbar { width: 4px; }
-  .list-area::-webkit-scrollbar-track { background: transparent; }
-  .list-area::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
-
-  .section-label {
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(248,245,240,0.35);
-    padding: 10px 8px 4px;
-  }
-
-  .location-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.15s;
-    margin-bottom: 2px;
-  }
-
-  .location-item:hover { background: rgba(255,255,255,0.06); }
-  .location-item.active-item { background: rgba(82,183,136,0.12); }
-
-  .loc-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    flex-shrink: 0;
-  }
-
-  .loc-name {
-    font-size: 12px;
-    font-weight: 500;
-    flex: 1;
-    line-height: 1.3;
-  }
-
-  .loc-badge {
-    font-size: 9px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-weight: 600;
-  }
-
-  .badge-in { background: rgba(82,183,136,0.2); color: var(--green-light); }
-  .badge-out { background: rgba(231,111,81,0.15); color: var(--orange); }
-  .badge-hq { background: rgba(82,183,136,0.3); color: var(--green-light); }
-  .badge-branch { background: rgba(82,183,136,0.15); color: var(--green-light); }
-
-  .legend-bar {
-    padding: 12px 16px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .legend-title {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(248,245,240,0.35);
-    font-weight: 600;
-  }
-
-  .legend-items {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    color: rgba(248,245,240,0.7);
-  }
-
-  .legend-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-  }
-
-  .legend-sq {
-    width: 14px;
-    height: 10px;
-    border-radius: 2px;
-  }
-
-  .radius-control {
-    padding: 12px 16px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .radius-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
-
-  .radius-label {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(248,245,240,0.45);
-    font-weight: 600;
-  }
-
-  .radius-value {
-    font-family: 'Syne', sans-serif;
-    font-size: 18px;
-    font-weight: 800;
-    color: #00E096;
-  }
-
-  .radius-slider {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 100%;
-    height: 5px;
-    border-radius: 3px;
-    background: rgba(255,255,255,0.18);
-    outline: none;
-    cursor: pointer;
-  }
-
-  .radius-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #00E096;
-    cursor: pointer;
-    border: 2px solid white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-  }
-
-  .radius-slider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #00E096;
-    cursor: pointer;
-    border: 2px solid white;
-  }
-
-  .radius-presets {
-    display: flex;
-    gap: 4px;
-  }
-
-  .preset-btn {
-    flex: 1;
-    padding: 5px 0;
-    border-radius: 5px;
-    border: 1px solid rgba(255,255,255,0.18);
-    background: transparent;
-    color: rgba(248,245,240,0.55);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
-    cursor: pointer;
-    transition: all 0.15s;
-    text-align: center;
-    font-weight: 600;
-  }
-
-  .preset-btn:hover { border-color: #00E096; color: #00E096; background: rgba(0,224,150,0.08); }
-  .preset-btn.active-preset { background: rgba(0,224,150,0.18); border-color: #00E096; color: #00E096; }
-
-  /* Leaflet custom */
-  .leaflet-popup-content-wrapper {
-    background: rgba(26,26,46,0.97);
-    color: var(--cream);
-    border: 1px solid rgba(82,183,136,0.3);
-    border-radius: 10px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-  }
-
-  .leaflet-popup-tip { background: rgba(26,26,46,0.97); }
-  .leaflet-popup-close-button { color: rgba(248,245,240,0.5) !important; }
-
-  .popup-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 4px;
-    color: var(--green-light);
-  }
-
-  .popup-type {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: rgba(248,245,240,0.4);
-    margin-bottom: 8px;
-  }
-
-  .popup-body { font-size: 12px; color: rgba(248,245,240,0.8); line-height: 1.6; }
-  .popup-seb { margin-top: 8px; font-size: 11px; }
-  .popup-seb-yes { color: var(--green-light); font-weight: 600; }
-  .popup-seb-no { color: var(--orange); }
 </style>
 </head>
 <body>
-
-<header>
-  <div class="logo-block">
-    <div class="logo-icon">🌿</div>
-    <div>
-      <h1>Krinkels <span>×</span> SEB Kaart</h1>
-      <div class="subtitle">Locaties & SEB-dekking visualisatie</div>
-    </div>
-  </div>
-  <div class="stats-bar">
-    <div class="stat">
-      <div class="stat-num" id="stat-in">—</div>
-      <div class="stat-label">In <span id="stat-radius-label">50</span>km zone</div>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat">
-      <div class="stat-num">10</div>
-      <div class="stat-label">Vestigingen</div>
-    </div>
-    <div class="stat-divider"></div>
-    <div class="stat">
-      <div class="stat-num" id="stat-total">—</div>
-      <div class="stat-label">SEB-locaties</div>
-    </div>
-  </div>
-</header>
-
-<div class="main">
-  <div id="map"></div>
-
-  <div class="sidebar">
-    <div class="sidebar-header">
-      <div class="sidebar-title">Locaties</div>
-      <div class="filter-tabs">
-        <button class="tab active" onclick="setFilter('all', this)">Alles</button>
-        <button class="tab" onclick="setFilter('in', this)">In zone</button>
-        <button class="tab" onclick="setFilter('out', this)">Buiten zone</button>
-        <button class="tab" onclick="setFilter('krinkels', this)">Krinkels</button>
-      </div>
-      <div class="search-box">
-        <input type="text" id="search-input" placeholder="Zoek locatie..." oninput="filterSearch(this.value)">
+<div class="app">
+  <header>
+    <div class="header-brand">
+      <div class="brand-leaf">🌿</div>
+      <div class="brand-text">
+        <h1>Krinkels × SEB</h1>
+        <div class="tagline">Locaties &amp; SEB-dekking</div>
       </div>
     </div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-num" id="stat-in">—</div>
+        <div class="hstat-label">In zone</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" id="stat-krinkels">—</div>
+        <div class="hstat-label">Krinkels</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-num" id="stat-total">—</div>
+        <div class="hstat-label">SEB</div>
+      </div>
+    </div>
+  </header>
 
-    <div class="list-area" id="location-list"></div>
+  <div class="main">
+    <div id="map"></div>
 
-    <div class="legend-bar">
-      <div class="legend-title">Legenda</div>
-      <div class="legend-items">
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#FFD600; border:2px solid #333"></div> Krinkels HQ
+    <!-- DESKTOP SIDEBAR -->
+    <div class="sidebar">
+      <!-- Radius controls -->
+      <div class="s-block">
+        <div class="s-title">Stralen instellen</div>
+
+        <!-- Branch radius -->
+        <div class="radius-row">
+          <div class="radius-icon" style="background:var(--k-mid)"></div>
+          <span class="radius-lbl">Vestigingen</span>
+          <span class="radius-val r-green"><span id="disp-branch-d">50</span> km</span>
         </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#FF6B00; border:2px solid #333"></div> Vestiging
+        <input type="range" class="rslider green" id="slider-branch-d" min="10" max="200" value="50" step="5" oninput="updateBranchRadius(this.value)">
+        <div class="presets">
+          <button class="pb" onclick="setBPreset(25,this)">25 km</button>
+          <button class="pb g-active" onclick="setBPreset(50,this)">50 km</button>
+          <button class="pb" onclick="setBPreset(75,this)">75 km</button>
+          <button class="pb" onclick="setBPreset(100,this)">100 km</button>
         </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#00C853"></div> SEB in zone
+
+        <!-- Work radius -->
+        <div class="radius-row" style="margin-top:10px">
+          <div class="radius-icon" style="background:var(--k-work);border-radius:2px"></div>
+          <span class="radius-lbl">Werklocaties</span>
+          <span class="radius-val r-orange"><span id="disp-work-d">25</span> km</span>
         </div>
-        <div class="legend-item">
-          <div class="legend-dot" style="background:#FF1744"></div> SEB buiten zone
+        <input type="range" class="rslider orange" id="slider-work-d" min="5" max="100" value="25" step="5" oninput="updateWorkRadius(this.value)">
+        <div class="presets">
+          <button class="pb orange-pb" onclick="setWPreset(10,this)">10 km</button>
+          <button class="pb o-active orange-pb" onclick="setWPreset(25,this)">25 km</button>
+          <button class="pb orange-pb" onclick="setWPreset(50,this)">50 km</button>
+          <button class="pb orange-pb" onclick="setWPreset(75,this)">75 km</button>
         </div>
-        <div class="legend-item">
-          <div class="legend-sq" style="background:rgba(0,180,255,0.15); border:2px solid #00B4FF"></div> Straal
+      </div>
+
+      <!-- SEB filter + search -->
+      <div class="s-block">
+        <div class="s-title">SEB-locaties</div>
+        <div class="filter-tabs">
+          <button class="tab active" onclick="setFilter('all',this)">Alles</button>
+          <button class="tab" onclick="setFilter('in',this)">In zone</button>
+          <button class="tab" onclick="setFilter('out',this)">Buiten</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="search-d" placeholder="Zoek locatie…" oninput="filterSearch(this.value)">
+        </div>
+      </div>
+
+      <!-- Scrollable panel -->
+      <div class="panel-scroll" id="panel-d"></div>
+
+      <!-- Legend -->
+      <div class="legend-bar">
+        <div class="legend-items">
+          <div class="li"><div class="ls" style="background:#1E4229"></div>HQ</div>
+          <div class="li"><div class="ls" style="background:#3A7D44"></div>Vestiging</div>
+          <div class="li"><div class="ls" style="background:var(--k-work)"></div>Werklocatie</div>
+          <div class="li"><div class="ld" style="background:#2E7D32"></div>SEB in zone</div>
+          <div class="li"><div class="ld" style="background:#C0392B"></div>SEB buiten</div>
+          <div class="li"><div class="ldash" style="border-color:#3A7D44"></div>Straal vest.</div>
+          <div class="li"><div class="ldash" style="border-color:var(--k-work)"></div>Straal werk</div>
         </div>
       </div>
     </div>
 
-    <div class="radius-control">
-      <div class="radius-header">
-        <span class="radius-label">Straal instellen</span>
-        <span class="radius-value"><span id="radius-display">50</span> km</span>
+    <!-- MOBILE -->
+    <div class="sheet-overlay" id="overlay" onclick="closeSheet()"></div>
+    <button class="mobile-fab" onclick="openSheet()">☰</button>
+    <div class="sheet" id="sheet">
+      <div class="sheet-handle-row"><div class="sheet-handle"></div></div>
+      <!-- radius -->
+      <div class="s-block" style="flex-shrink:0">
+        <div class="s-title">Stralen instellen</div>
+        <div class="radius-row">
+          <div class="radius-icon" style="background:var(--k-mid)"></div>
+          <span class="radius-lbl">Vestigingen</span>
+          <span class="radius-val r-green"><span id="disp-branch-m">50</span> km</span>
+        </div>
+        <input type="range" class="rslider green" id="slider-branch-m" min="10" max="200" value="50" step="5" oninput="updateBranchRadius(this.value)">
+        <div class="presets">
+          <button class="pb" onclick="setBPreset(25,this)">25 km</button>
+          <button class="pb g-active" onclick="setBPreset(50,this)">50 km</button>
+          <button class="pb" onclick="setBPreset(75,this)">75 km</button>
+          <button class="pb" onclick="setBPreset(100,this)">100 km</button>
+        </div>
+        <div class="radius-row" style="margin-top:10px">
+          <div class="radius-icon" style="background:var(--k-work)"></div>
+          <span class="radius-lbl">Werklocaties</span>
+          <span class="radius-val r-orange"><span id="disp-work-m">25</span> km</span>
+        </div>
+        <input type="range" class="rslider orange" id="slider-work-m" min="5" max="100" value="25" step="5" oninput="updateWorkRadius(this.value)">
+        <div class="presets">
+          <button class="pb orange-pb" onclick="setWPreset(10,this)">10 km</button>
+          <button class="pb o-active orange-pb" onclick="setWPreset(25,this)">25 km</button>
+          <button class="pb orange-pb" onclick="setWPreset(50,this)">50 km</button>
+          <button class="pb orange-pb" onclick="setWPreset(75,this)">75 km</button>
+        </div>
       </div>
-      <input type="range" class="radius-slider" id="radius-slider" min="10" max="200" value="50" step="5" oninput="updateRadius(this.value)">
-      <div class="radius-presets">
-        <button class="preset-btn active-preset" onclick="setPreset(25, this)">25 km</button>
-        <button class="preset-btn" onclick="setPreset(50, this)">50 km</button>
-        <button class="preset-btn" onclick="setPreset(75, this)">75 km</button>
-        <button class="preset-btn" onclick="setPreset(100, this)">100 km</button>
+      <!-- filter + search -->
+      <div class="s-block" style="flex-shrink:0">
+        <div class="s-title">SEB-locaties</div>
+        <div class="filter-tabs">
+          <button class="tab active" onclick="setFilter('all',this)">Alles</button>
+          <button class="tab" onclick="setFilter('in',this)">In zone</button>
+          <button class="tab" onclick="setFilter('out',this)">Buiten</button>
+        </div>
+        <div class="search-box">
+          <input type="text" id="search-m" placeholder="Zoek locatie…" oninput="filterSearch(this.value)">
+        </div>
       </div>
+      <div class="panel-scroll" id="panel-m"></div>
     </div>
   </div>
 </div>
 
 <script>
-// ============================================================
+// ═══════════════════════════════════════
 // DATA
-// ============================================================
+// ═══════════════════════════════════════
+const branches = [
+  {id:'breda',       name:"Hoofdkantoor Breda",               address:"Rithsestraat 87, 4813 GW Breda",                 lat:51.5719,lng:4.7683,type:'hq'},
+  {id:'alkmaar',     name:"Vestiging Alkmaar",                 address:"Lemmingkoog 2, 1822 BR Alkmaar",                 lat:52.6324,lng:4.7534,type:'branch'},
+  {id:'assen',       name:"Vestiging Assen",                   address:"Spanjelaan 30, 9403 DP Assen",                   lat:52.9925,lng:6.5576,type:'branch'},
+  {id:'eindhoven',   name:"Vestiging Eindhoven",               address:"Ekkersrijt 2056, 5692 BA Son",                   lat:51.5229,lng:5.4962,type:'branch'},
+  {id:'heerlen',     name:"Vestiging Heerlen",                 address:"Pretoriastraat 29, 6413 NN Heerlen",             lat:50.8880,lng:5.9840,type:'branch'},
+  {id:'hengelo',     name:"Vestiging Hengelo",                 address:"Jan Tinbergenstraat 136, 7559 SP Hengelo",       lat:52.2660,lng:6.7930,type:'branch'},
+  {id:'nagele',      name:"Vestiging Nagele",                  address:"Eggestraat 21, 8308 AB Nagele",                  lat:52.6456,lng:5.7271,type:'branch'},
+  {id:'nieuwerkerk', name:"Vestiging Nieuwerkerk a/d IJssel",  address:"Albert van 't Hartweg 17, 2913 LE Nieuwerkerk",  lat:51.9700,lng:4.6108,type:'branch'},
+  {id:'wouw',        name:"Vestiging Wouw",                    address:"Plantagebaan 58, 4724 CK Wouw",                  lat:51.5365,lng:4.4016,type:'branch'},
+];
 
-const krinkelsLocations = [
-  { name: "Krinkels Hoofdkantoor", city: "Breda", address: "Rithsestraat 87, 4813 GW Breda", lat: 51.5719, lng: 4.7683, type: "hq" },
-  { name: "Vestiging Alkmaar", city: "Alkmaar", address: "Lemmingkoog 2, 1822 BR Alkmaar", lat: 52.6324, lng: 4.7534, type: "branch", sub: "Nieuw-Vennep, Purmerend, Amstelveen" },
-  { name: "Vestiging Assen", city: "Assen", address: "Spanjelaan 30, 9403 DP Assen", lat: 52.9925, lng: 6.5576, type: "branch", sub: "Groningen, Zuidwolde" },
-  { name: "Vestiging Eindhoven", city: "Son", address: "Ekkersrijt 2056, 5692 BA Son", lat: 51.5229, lng: 5.4962, type: "branch", sub: "Tegelen" },
-  { name: "Vestiging Heerlen", city: "Heerlen", address: "Pretoriastraat 29, 6413 NN Heerlen", lat: 50.8880, lng: 5.9840, type: "branch" },
-  { name: "Vestiging Hengelo", city: "Hengelo", address: "Jan Tinbergenstraat 136, 7559 SP Hengelo", lat: 52.2660, lng: 6.7930, type: "branch", sub: "Enschede" },
-  { name: "Vestiging Nagele", city: "Nagele", address: "Eggestraat 21, 8308 AB Nagele", lat: 52.6456, lng: 5.7271, type: "branch", sub: "Dronten, Almere" },
-  { name: "Vestiging Nieuwerkerk a/d IJssel", city: "Nieuwerkerk a/d IJssel", address: "Albert van 't Hartweg 17, 2913 LE Nieuwerkerk", lat: 51.9700, lng: 4.6108, type: "branch", sub: "Delft, Nieuwegein" },
-  { name: "Vestiging Wouw", city: "Wouw", address: "Plantagebaan 58, 4724 CK Wouw", lat: 51.5365, lng: 4.4016, type: "branch" },
+// Removed: w01 Alkmaar-Egelskoog (0.3km), w08 Hengelo-JT132 (0.1km),
+//          w09 Hengelo-Granaatstraat (2.0km), w16 Wouw-Plantagebaan60 (0.1km),
+//          w19 Heerlen-Pretoriastraat26 (0.0km), w20 Heerlen-Zuid (2.9km)
+const workLocations = [
+  {id:'w02',name:"Nieuw-Vennep – IJweg",         address:"IJweg 1475, 2152 NC Nieuw-Vennep",          lat:52.2580,lng:4.6350},
+  {id:'w03',name:"Purmerend – Maxwellstraat",    address:"Maxwellstraat 2, 1446 TA Purmerend",         lat:52.5090,lng:4.9660},
+  {id:'w04',name:"Amstelveen – Meerlanden",      address:"Meerlanden 65A, 1187 ZR Amstelveen",         lat:52.2900,lng:4.8100},
+  {id:'w05',name:"Haarlem – Ir. Lelyweg",        address:"Ir. Lelyweg 45, 2031 CD Haarlem",           lat:52.4000,lng:4.6300},
+  {id:'w06',name:"Tegelen – Julianastraat",      address:"Julianastraat 2, 5932 EH Tegelen",           lat:51.3380,lng:6.1510},
+  {id:'w07',name:"Weert – Stekshofweg",          address:"Stekshofweg 11, 6004 RZ Weert",              lat:51.2280,lng:5.7060},
+  {id:'w10',name:"Enschede – Boerderij",         address:"Boerderij 77, 7522 DB Enschede",             lat:52.2190,lng:6.8760},
+  {id:'w11',name:"Almere – De Steiger",          address:"De Steiger 135, 1351 AM Almere",             lat:52.3708,lng:5.2197},
+  {id:'w12',name:"Almere – Vlotbrugweg",         address:"Vlotbrugweg 3, 1332 AE Almere",              lat:52.3560,lng:5.2150},
+  {id:'w13',name:"Dronten – De Eem",             address:"De Eem 15, 8253 PM Dronten",                 lat:52.5220,lng:5.7180},
+  {id:'w14',name:"Zuidwolde – Nijverheidsweg",   address:"Nijverheidsweg 14, 7921 JJ Zuidwolde",       lat:52.6740,lng:6.4260},
+  {id:'w15',name:"Groningen – Nadorstplein",     address:"Nadorstplein 4, 9747 AB Groningen",          lat:53.2280,lng:6.5280},
+  {id:'w17',name:"Delft – Sadatweg",             address:"Sadatweg 20, 2622 AP Delft",                 lat:51.9980,lng:4.3760},
+  {id:'w18',name:"Nieuwegein – Overijsselhaven", address:"Overijsselhaven 3B, 3433 PH Nieuwegein",     lat:52.0340,lng:5.0960},
 ];
 
 const sebLocations = [
-  { name: "Almere", lat: 52.3508, lng: 5.2647, type: "gemeente" },
-  { name: "Alphen aan den Rijn", lat: 52.1284, lng: 4.6607, type: "gemeente" },
-  { name: "Amersfoort", lat: 52.1551, lng: 5.3872, type: "gemeente" },
-  { name: "Amstelveen", lat: 52.3067, lng: 4.8597, type: "gemeente" },
-  { name: "Apeldoorn", lat: 52.2112, lng: 5.9699, type: "gemeente" },
-  { name: "Asten", lat: 51.4011, lng: 5.7477, type: "gemeente" },
-  { name: "Berg en Dal", lat: 51.8027, lng: 5.9340, type: "gemeente" },
-  { name: "Bergen (NH)", lat: 52.6701, lng: 4.7001, type: "gemeente" },
-  { name: "Bergen op Zoom", lat: 51.4958, lng: 4.2880, type: "gemeente" },
-  { name: "Beuningen", lat: 51.8631, lng: 5.7729, type: "gemeente" },
-  { name: "Beverwijk", lat: 52.4878, lng: 4.6557, type: "gemeente" },
-  { name: "Bloemendaal", lat: 52.4065, lng: 4.6148, type: "gemeente" },
-  { name: "Brummen", lat: 52.0914, lng: 6.1567, type: "gemeente" },
-  { name: "Bunnik", lat: 52.0625, lng: 5.2038, type: "gemeente" },
-  { name: "Castricum", lat: 52.5476, lng: 4.6589, type: "gemeente" },
-  { name: "De Bilt", lat: 52.1086, lng: 5.1769, type: "gemeente" },
-  { name: "De Ronde Venen", lat: 52.2122, lng: 4.8453, type: "gemeente" },
-  { name: "Dijk en Waard", lat: 52.6667, lng: 4.8333, type: "gemeente" },
-  { name: "Doesburg", lat: 52.0147, lng: 6.1330, type: "gemeente" },
-  { name: "Doetinchem", lat: 51.9654, lng: 6.2958, type: "gemeente" },
-  { name: "Dongen", lat: 51.6269, lng: 4.9378, type: "gemeente" },
-  { name: "Dordrecht", lat: 51.8133, lng: 4.6901, type: "gemeente" },
-  { name: "Druten", lat: 51.8833, lng: 5.5986, type: "gemeente" },
-  { name: "Duiven", lat: 51.9475, lng: 6.0222, type: "gemeente" },
-  { name: "Ede", lat: 52.0424, lng: 5.6664, type: "gemeente" },
-  { name: "Enschede", lat: 52.2215, lng: 6.8937, type: "gemeente" },
-  { name: "Fryske Marren", lat: 52.8500, lng: 5.7000, type: "gemeente" },
-  { name: "Geldrop-Mierlo", lat: 51.4244, lng: 5.5583, type: "gemeente" },
-  { name: "Gouda", lat: 52.0116, lng: 4.7122, type: "gemeente" },
-  { name: "Haarlem", lat: 52.3874, lng: 4.6462, type: "gemeente" },
-  { name: "Haarlemmermeer", lat: 52.3080, lng: 4.6935, type: "gemeente" },
-  { name: "Harderwijk", lat: 52.3451, lng: 5.6230, type: "gemeente" },
-  { name: "Hattem", lat: 52.4725, lng: 6.0611, type: "gemeente" },
-  { name: "Heemskerk", lat: 52.5083, lng: 4.6727, type: "gemeente" },
-  { name: "Heemstede", lat: 52.3519, lng: 4.6205, type: "gemeente" },
-  { name: "Heerenveen", lat: 52.9587, lng: 5.9194, type: "gemeente" },
-  { name: "Heerlen", lat: 50.8881, lng: 5.9797, type: "gemeente" },
-  { name: "Heiloo", lat: 52.6050, lng: 4.7020, type: "gemeente" },
-  { name: "Hellendoorn", lat: 52.3972, lng: 6.4539, type: "gemeente" },
-  { name: "Helmond", lat: 51.4783, lng: 5.6617, type: "gemeente" },
-  { name: "Hengelo", lat: 52.2660, lng: 6.7930, type: "gemeente" },
-  { name: "Heusden", lat: 51.7333, lng: 5.1500, type: "gemeente" },
-  { name: "Hilversum", lat: 52.2292, lng: 5.1786, type: "gemeente" },
-  { name: "Hoorn", lat: 52.6414, lng: 5.0600, type: "gemeente" },
-  { name: "IJsselstein", lat: 52.0177, lng: 5.0300, type: "gemeente" },
-  { name: "Kampen", lat: 52.5558, lng: 5.9131, type: "gemeente" },
-  { name: "Leiden", lat: 52.1601, lng: 4.4970, type: "gemeente" },
-  { name: "Leusden", lat: 52.1350, lng: 5.4319, type: "gemeente" },
-  { name: "Lingewaard", lat: 51.8833, lng: 5.9667, type: "gemeente" },
-  { name: "Losser", lat: 52.2597, lng: 6.9997, type: "gemeente" },
-  { name: "Medemblik", lat: 52.7673, lng: 5.1044, type: "gemeente" },
-  { name: "Montfoort", lat: 52.0433, lng: 4.9531, type: "gemeente" },
-  { name: "Oosterhout", lat: 51.6400, lng: 4.8600, type: "gemeente" },
-  { name: "Oudewater", lat: 52.0175, lng: 4.8686, type: "gemeente" },
-  { name: "Overbetuwe", lat: 51.9167, lng: 5.8333, type: "gemeente" },
-  { name: "Renkum", lat: 51.9850, lng: 5.7583, type: "gemeente" },
-  { name: "Rheden", lat: 52.0072, lng: 6.0375, type: "gemeente" },
-  { name: "Terschelling", lat: 53.3906, lng: 5.2197, type: "gemeente" },
-  { name: "Tytsjerksteradiel", lat: 53.1667, lng: 5.9333, type: "gemeente" },
-  { name: "Uitgeest", lat: 52.5328, lng: 4.7108, type: "gemeente" },
-  { name: "Utrechtse Heuvelrug", lat: 52.0500, lng: 5.3500, type: "gemeente" },
-  { name: "Veenendaal", lat: 52.0264, lng: 5.5561, type: "gemeente" },
-  { name: "Velsen", lat: 52.4583, lng: 4.6500, type: "gemeente" },
-  { name: "Vijfheerenlanden", lat: 51.9333, lng: 5.0167, type: "gemeente" },
-  { name: "Voorst", lat: 52.1769, lng: 6.1361, type: "gemeente" },
-  { name: "Waadhoeke", lat: 53.2000, lng: 5.4500, type: "gemeente" },
-  { name: "Waalre", lat: 51.3897, lng: 5.4553, type: "gemeente" },
-  { name: "Waalwijk", lat: 51.6825, lng: 5.0725, type: "gemeente" },
-  { name: "Wageningen", lat: 51.9692, lng: 5.6656, type: "gemeente" },
-  { name: "Westervoort", lat: 51.9700, lng: 5.9700, type: "gemeente" },
-  { name: "Woerden", lat: 52.0883, lng: 4.8828, type: "gemeente" },
-  { name: "Woudenberg", lat: 52.0803, lng: 5.4092, type: "gemeente" },
-  { name: "Zaanstad", lat: 52.4392, lng: 4.8308, type: "gemeente" },
-  { name: "Zandvoort", lat: 52.3714, lng: 4.5339, type: "gemeente" },
-  { name: "Zeist", lat: 52.0894, lng: 5.2336, type: "gemeente" },
-  { name: "Zevenaar", lat: 51.9283, lng: 6.0769, type: "gemeente" },
-  // Waterschappen
-  { name: "Aa en Maas", lat: 51.7500, lng: 5.5000, type: "waterschap" },
-  { name: "Amstel, Gooi en Vecht", lat: 52.2667, lng: 5.0000, type: "waterschap" },
-  { name: "Brabantse Delta", lat: 51.5500, lng: 4.5000, type: "waterschap" },
-  { name: "De Dommel", lat: 51.5000, lng: 5.3000, type: "waterschap" },
-  { name: "De Stichtse Rijnlanden", lat: 52.0000, lng: 5.1000, type: "waterschap" },
-  { name: "Delfland", lat: 52.0500, lng: 4.3500, type: "waterschap" },
-  { name: "Drents Overijsselse Delta", lat: 52.5000, lng: 6.1000, type: "waterschap" },
-  { name: "Fryslân (waterschap)", lat: 53.0000, lng: 5.8000, type: "waterschap" },
-  { name: "Hollands Noorderkwartier", lat: 52.7000, lng: 4.9000, type: "waterschap" },
-  { name: "Hollandse Delta", lat: 51.8000, lng: 4.5000, type: "waterschap" },
-  { name: "Hunze en Aa's", lat: 53.1000, lng: 6.8000, type: "waterschap" },
-  { name: "Limburg (waterschap)", lat: 51.2000, lng: 5.9000, type: "waterschap" },
-  { name: "Noorderzijlvest", lat: 53.3000, lng: 6.5000, type: "waterschap" },
-  { name: "Rijn en IJssel", lat: 51.9500, lng: 6.2000, type: "waterschap" },
-  { name: "Rijnland", lat: 52.1500, lng: 4.5500, type: "waterschap" },
-  { name: "Rivierenland", lat: 51.8500, lng: 5.3000, type: "waterschap" },
-  { name: "Scheldestromen", lat: 51.5000, lng: 3.8000, type: "waterschap" },
-  { name: "Schieland en de Krimpenerwaard", lat: 51.9500, lng: 4.5500, type: "waterschap" },
-  { name: "Vallei en Veluwe", lat: 52.1500, lng: 5.6000, type: "waterschap" },
-  { name: "Vechtstromen", lat: 52.4000, lng: 6.6000, type: "waterschap" },
-  { name: "Zuiderzeeland", lat: 52.5500, lng: 5.5000, type: "waterschap" },
-  // Grote gemeenten
-  { name: "Amsterdam", lat: 52.3676, lng: 4.9041, type: "grote_gemeente" },
-  { name: "Arnhem", lat: 51.9851, lng: 5.8987, type: "grote_gemeente" },
-  { name: "Breda", lat: 51.5719, lng: 4.7683, type: "grote_gemeente" },
-  { name: "Den Haag", lat: 52.0705, lng: 4.3007, type: "grote_gemeente" },
-  { name: "Eindhoven", lat: 51.4416, lng: 5.4697, type: "grote_gemeente" },
-  { name: "Groningen", lat: 53.2194, lng: 6.5665, type: "grote_gemeente" },
-  { name: "'s-Hertogenbosch", lat: 51.6978, lng: 5.3037, type: "grote_gemeente" },
-  { name: "Meppel", lat: 52.6961, lng: 6.1953, type: "grote_gemeente" },
-  { name: "Nijmegen", lat: 51.8126, lng: 5.8372, type: "grote_gemeente" },
-  { name: "Rotterdam", lat: 51.9225, lng: 4.4792, type: "grote_gemeente" },
-  { name: "Tilburg", lat: 51.5555, lng: 5.0913, type: "grote_gemeente" },
-  { name: "Utrecht", lat: 52.0907, lng: 5.1214, type: "grote_gemeente" },
-  // Semi-overheden
-  { name: "Havenbedrijf Rotterdam", lat: 51.9150, lng: 4.3900, type: "semi" },
-  { name: "Royal Schiphol Group", lat: 52.3105, lng: 4.7683, type: "semi" },
-  { name: "Port of Amsterdam", lat: 52.3900, lng: 4.9200, type: "semi" },
+  {name:"Almere",lat:52.3508,lng:5.2647,type:"gemeente"},
+  {name:"Alphen aan den Rijn",lat:52.1284,lng:4.6607,type:"gemeente"},
+  {name:"Amersfoort",lat:52.1551,lng:5.3872,type:"gemeente"},
+  {name:"Amstelveen",lat:52.3067,lng:4.8597,type:"gemeente"},
+  {name:"Apeldoorn",lat:52.2112,lng:5.9699,type:"gemeente"},
+  {name:"Asten",lat:51.4011,lng:5.7477,type:"gemeente"},
+  {name:"Berg en Dal",lat:51.8027,lng:5.9340,type:"gemeente"},
+  {name:"Bergen (NH)",lat:52.6701,lng:4.7001,type:"gemeente"},
+  {name:"Bergen op Zoom",lat:51.4958,lng:4.2880,type:"gemeente"},
+  {name:"Beuningen",lat:51.8631,lng:5.7729,type:"gemeente"},
+  {name:"Beverwijk",lat:52.4878,lng:4.6557,type:"gemeente"},
+  {name:"Bloemendaal",lat:52.4065,lng:4.6148,type:"gemeente"},
+  {name:"Brummen",lat:52.0914,lng:6.1567,type:"gemeente"},
+  {name:"Bunnik",lat:52.0625,lng:5.2038,type:"gemeente"},
+  {name:"Castricum",lat:52.5476,lng:4.6589,type:"gemeente"},
+  {name:"De Bilt",lat:52.1086,lng:5.1769,type:"gemeente"},
+  {name:"De Ronde Venen",lat:52.2122,lng:4.8453,type:"gemeente"},
+  {name:"Dijk en Waard",lat:52.6667,lng:4.8333,type:"gemeente"},
+  {name:"Doesburg",lat:52.0147,lng:6.1330,type:"gemeente"},
+  {name:"Doetinchem",lat:51.9654,lng:6.2958,type:"gemeente"},
+  {name:"Dongen",lat:51.6269,lng:4.9378,type:"gemeente"},
+  {name:"Dordrecht",lat:51.8133,lng:4.6901,type:"gemeente"},
+  {name:"Druten",lat:51.8833,lng:5.5986,type:"gemeente"},
+  {name:"Duiven",lat:51.9475,lng:6.0222,type:"gemeente"},
+  {name:"Ede",lat:52.0424,lng:5.6664,type:"gemeente"},
+  {name:"Enschede",lat:52.2215,lng:6.8937,type:"gemeente"},
+  {name:"Fryske Marren",lat:52.8500,lng:5.7000,type:"gemeente"},
+  {name:"Geldrop-Mierlo",lat:51.4244,lng:5.5583,type:"gemeente"},
+  {name:"Gouda",lat:52.0116,lng:4.7122,type:"gemeente"},
+  {name:"Haarlem",lat:52.3874,lng:4.6462,type:"gemeente"},
+  {name:"Haarlemmermeer",lat:52.3080,lng:4.6935,type:"gemeente"},
+  {name:"Harderwijk",lat:52.3451,lng:5.6230,type:"gemeente"},
+  {name:"Hattem",lat:52.4725,lng:6.0611,type:"gemeente"},
+  {name:"Heemskerk",lat:52.5083,lng:4.6727,type:"gemeente"},
+  {name:"Heemstede",lat:52.3519,lng:4.6205,type:"gemeente"},
+  {name:"Heerenveen",lat:52.9587,lng:5.9194,type:"gemeente"},
+  {name:"Heerlen",lat:50.8881,lng:5.9797,type:"gemeente"},
+  {name:"Heiloo",lat:52.6050,lng:4.7020,type:"gemeente"},
+  {name:"Hellendoorn",lat:52.3972,lng:6.4539,type:"gemeente"},
+  {name:"Helmond",lat:51.4783,lng:5.6617,type:"gemeente"},
+  {name:"Hengelo",lat:52.2660,lng:6.7930,type:"gemeente"},
+  {name:"Heusden",lat:51.7333,lng:5.1500,type:"gemeente"},
+  {name:"Hilversum",lat:52.2292,lng:5.1786,type:"gemeente"},
+  {name:"Hoorn",lat:52.6414,lng:5.0600,type:"gemeente"},
+  {name:"IJsselstein",lat:52.0177,lng:5.0300,type:"gemeente"},
+  {name:"Kampen",lat:52.5558,lng:5.9131,type:"gemeente"},
+  {name:"Leiden",lat:52.1601,lng:4.4970,type:"gemeente"},
+  {name:"Leusden",lat:52.1350,lng:5.4319,type:"gemeente"},
+  {name:"Lingewaard",lat:51.8833,lng:5.9667,type:"gemeente"},
+  {name:"Losser",lat:52.2597,lng:6.9997,type:"gemeente"},
+  {name:"Medemblik",lat:52.7673,lng:5.1044,type:"gemeente"},
+  {name:"Montfoort",lat:52.0433,lng:4.9531,type:"gemeente"},
+  {name:"Oosterhout",lat:51.6400,lng:4.8600,type:"gemeente"},
+  {name:"Oudewater",lat:52.0175,lng:4.8686,type:"gemeente"},
+  {name:"Overbetuwe",lat:51.9167,lng:5.8333,type:"gemeente"},
+  {name:"Renkum",lat:51.9850,lng:5.7583,type:"gemeente"},
+  {name:"Rheden",lat:52.0072,lng:6.0375,type:"gemeente"},
+  {name:"Terschelling",lat:53.3906,lng:5.2197,type:"gemeente"},
+  {name:"Tytsjerksteradiel",lat:53.1667,lng:5.9333,type:"gemeente"},
+  {name:"Uitgeest",lat:52.5328,lng:4.7108,type:"gemeente"},
+  {name:"Utrechtse Heuvelrug",lat:52.0500,lng:5.3500,type:"gemeente"},
+  {name:"Veenendaal",lat:52.0264,lng:5.5561,type:"gemeente"},
+  {name:"Velsen",lat:52.4583,lng:4.6500,type:"gemeente"},
+  {name:"Vijfheerenlanden",lat:51.9333,lng:5.0167,type:"gemeente"},
+  {name:"Voorst",lat:52.1769,lng:6.1361,type:"gemeente"},
+  {name:"Waadhoeke",lat:53.2000,lng:5.4500,type:"gemeente"},
+  {name:"Waalre",lat:51.3897,lng:5.4553,type:"gemeente"},
+  {name:"Waalwijk",lat:51.6825,lng:5.0725,type:"gemeente"},
+  {name:"Wageningen",lat:51.9692,lng:5.6656,type:"gemeente"},
+  {name:"Westervoort",lat:51.9700,lng:5.9700,type:"gemeente"},
+  {name:"Woerden",lat:52.0883,lng:4.8828,type:"gemeente"},
+  {name:"Woudenberg",lat:52.0803,lng:5.4092,type:"gemeente"},
+  {name:"Zaanstad",lat:52.4392,lng:4.8308,type:"gemeente"},
+  {name:"Zandvoort",lat:52.3714,lng:4.5339,type:"gemeente"},
+  {name:"Zeist",lat:52.0894,lng:5.2336,type:"gemeente"},
+  {name:"Zevenaar",lat:51.9283,lng:6.0769,type:"gemeente"},
+  {name:"Aa en Maas",lat:51.7500,lng:5.5000,type:"waterschap"},
+  {name:"Amstel, Gooi en Vecht",lat:52.2667,lng:5.0000,type:"waterschap"},
+  {name:"Brabantse Delta",lat:51.5500,lng:4.5000,type:"waterschap"},
+  {name:"De Dommel",lat:51.5000,lng:5.3000,type:"waterschap"},
+  {name:"De Stichtse Rijnlanden",lat:52.0000,lng:5.1000,type:"waterschap"},
+  {name:"Delfland",lat:52.0500,lng:4.3500,type:"waterschap"},
+  {name:"Drents Overijsselse Delta",lat:52.5000,lng:6.1000,type:"waterschap"},
+  {name:"Fryslân (waterschap)",lat:53.0000,lng:5.8000,type:"waterschap"},
+  {name:"Hollands Noorderkwartier",lat:52.7000,lng:4.9000,type:"waterschap"},
+  {name:"Hollandse Delta",lat:51.8000,lng:4.5000,type:"waterschap"},
+  {name:"Hunze en Aa's",lat:53.1000,lng:6.8000,type:"waterschap"},
+  {name:"Limburg (waterschap)",lat:51.2000,lng:5.9000,type:"waterschap"},
+  {name:"Noorderzijlvest",lat:53.3000,lng:6.5000,type:"waterschap"},
+  {name:"Rijn en IJssel",lat:51.9500,lng:6.2000,type:"waterschap"},
+  {name:"Rijnland",lat:52.1500,lng:4.5500,type:"waterschap"},
+  {name:"Rivierenland",lat:51.8500,lng:5.3000,type:"waterschap"},
+  {name:"Scheldestromen",lat:51.5000,lng:3.8000,type:"waterschap"},
+  {name:"Schieland en de Krimpenerwaard",lat:51.9500,lng:4.5500,type:"waterschap"},
+  {name:"Vallei en Veluwe",lat:52.1500,lng:5.6000,type:"waterschap"},
+  {name:"Vechtstromen",lat:52.4000,lng:6.6000,type:"waterschap"},
+  {name:"Zuiderzeeland",lat:52.5500,lng:5.5000,type:"waterschap"},
+  {name:"Amsterdam",lat:52.3676,lng:4.9041,type:"grote_gemeente"},
+  {name:"Arnhem",lat:51.9851,lng:5.8987,type:"grote_gemeente"},
+  {name:"Breda",lat:51.5719,lng:4.7683,type:"grote_gemeente"},
+  {name:"Den Haag",lat:52.0705,lng:4.3007,type:"grote_gemeente"},
+  {name:"Eindhoven",lat:51.4416,lng:5.4697,type:"grote_gemeente"},
+  {name:"Groningen",lat:53.2194,lng:6.5665,type:"grote_gemeente"},
+  {name:"'s-Hertogenbosch",lat:51.6978,lng:5.3037,type:"grote_gemeente"},
+  {name:"Meppel",lat:52.6961,lng:6.1953,type:"grote_gemeente"},
+  {name:"Nijmegen",lat:51.8126,lng:5.8372,type:"grote_gemeente"},
+  {name:"Rotterdam",lat:51.9225,lng:4.4792,type:"grote_gemeente"},
+  {name:"Tilburg",lat:51.5555,lng:5.0913,type:"grote_gemeente"},
+  {name:"Utrecht",lat:52.0907,lng:5.1214,type:"grote_gemeente"},
+  {name:"Havenbedrijf Rotterdam",lat:51.9150,lng:4.3900,type:"semi"},
+  {name:"Royal Schiphol Group",lat:52.3105,lng:4.7683,type:"semi"},
+  {name:"Port of Amsterdam",lat:52.3900,lng:4.9200,type:"semi"},
 ];
 
-// ============================================================
-// MAP SETUP
-// ============================================================
-
-const map = L.map('map', { center: [52.1, 5.3], zoom: 7, zoomControl: true });
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-  maxZoom: 19,
+// ═══════════════════════════════════════
+// MAP
+// ═══════════════════════════════════════
+const map = L.map('map',{center:[52.1,5.3],zoom:7});
+map.zoomControl.setPosition('topleft');
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+  attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',maxZoom:19
 }).addTo(map);
 
-// ============================================================
+// ═══════════════════════════════════════
 // DISTANCE
-// ============================================================
-
-function haversineDistance(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+// ═══════════════════════════════════════
+function dist(lat1,lng1,lat2,lng2){
+  const R=6371,a=(lat2-lat1)*Math.PI/180,b=(lng2-lng1)*Math.PI/180;
+  const c=Math.sin(a/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(b/2)**2;
+  return R*2*Math.atan2(Math.sqrt(c),Math.sqrt(1-c));
 }
 
-function getNearestKrinkels(loc) {
-  let nearest = null, minDist = Infinity;
-  krinkelsLocations.forEach(k => {
-    const d = haversineDistance(k.lat, k.lng, loc.lat, loc.lng);
-    if (d < minDist) { minDist = d; nearest = k; }
-  });
-  return { location: nearest, distance: Math.round(minDist) };
-}
-
-// ============================================================
+// ═══════════════════════════════════════
 // STATE
-// ============================================================
+// ═══════════════════════════════════════
+const bState = {}; branches.forEach(b=>{ bState[b.id]={visible:true}; });
+const wState = {}; workLocations.forEach(w=>{ wState[w.id]={visible:true}; });
+let branchRadius = 50;
+let workRadius   = 25;
 
-let currentRadiusKm = 50;
-const radiusCircles = [];
-const sebMarkerObjects = {}; // name -> L.circleMarker
+// ═══════════════════════════════════════
+// MARKERS – BRANCHES
+// ═══════════════════════════════════════
+function pinSvg(fill, size){
+  const w=size,h=Math.round(size*1.4);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+    <path d="M${w/2} 0C${w*.22} 0 0 ${w*.22} 0 ${w/2}c0 ${w*.67} ${w/2} ${h-w/2} ${w/2} ${h-w/2}s${w/2}-${h-w-w*.17} ${w/2}-${h-w/2}C${w} ${w*.22} ${w*.78} 0 ${w/2} 0z" fill="${fill}" stroke="white" stroke-width="1.5"/>
+    <circle cx="${w/2}" cy="${w/2}" r="${w*.28}" fill="white"/>
+    <circle cx="${w/2}" cy="${w/2}" r="${w*.13}" fill="${fill}"/>
+  </svg>`;
+}
+function workSvg(s){
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
+    <rect x="1" y="1" width="${s-2}" height="${s-2}" rx="${Math.round(s*.18)}" fill="#C0580A" stroke="white" stroke-width="1.5"/>
+    <circle cx="${s/2}" cy="${s/2}" r="${s*.22}" fill="white"/>
+    <circle cx="${s/2}" cy="${s/2}" r="${s*.1}" fill="#C0580A"/>
+  </svg>`;
+}
 
-// ============================================================
-// KRINKELS MARKERS (static)
-// ============================================================
-
-const krinkelsSvgHq = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="42" viewBox="0 0 32 42">
-  <path d="M16 0C7.163 0 0 7.163 0 16c0 10.667 16 26 16 26s16-15.333 16-26C32 7.163 24.837 0 16 0z" fill="#FFD600" stroke="#333" stroke-width="1.5"/>
-  <circle cx="16" cy="16" r="7" fill="white"/>
-  <circle cx="16" cy="16" r="3.5" fill="#333"/>
-</svg>`;
-
-const krinkelsSvgBranch = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="34" viewBox="0 0 26 34">
-  <path d="M13 0C5.82 0 0 5.82 0 13c0 8.667 13 21 13 21s13-12.333 13-21C26 5.82 20.18 0 13 0z" fill="#FF6B00" stroke="#333" stroke-width="1.5"/>
-  <circle cx="13" cy="13" r="5.5" fill="white"/>
-  <circle cx="13" cy="13" r="2.5" fill="#333"/>
-</svg>`;
-
-const krinkelsMarkers = {};
-krinkelsLocations.forEach(k => {
-  const svg = k.type === 'hq' ? krinkelsSvgHq : krinkelsSvgBranch;
-  const size = k.type === 'hq' ? [32, 42] : [26, 34];
-  const icon = L.divIcon({ html: svg, iconSize: size, iconAnchor: [size[0]/2, size[1]], className: '' });
-  const marker = L.marker([k.lat, k.lng], { icon, zIndexOffset: 1000 });
-  marker.bindPopup(`
-    <div class="popup-title">${k.name}</div>
-    <div class="popup-type">${k.type === 'hq' ? 'Hoofdkantoor' : 'Vestiging'}</div>
-    <div class="popup-body">
-      📍 ${k.address}
-      ${k.sub ? `<br>🔗 Werkgebied: ${k.sub}` : ''}
-    </div>
-  `);
-  marker.addTo(map);
-  krinkelsMarkers[k.name] = marker;
+const branchM = {};
+branches.forEach(b=>{
+  const isHq=b.type==='hq';
+  const svg=pinSvg(isHq?'#1E4229':'#3A7D44',isHq?28:22);
+  const sz=isHq?[28,39]:[22,31];
+  const icon=L.divIcon({html:svg,iconSize:sz,iconAnchor:[sz[0]/2,sz[1]],className:''});
+  const m=L.marker([b.lat,b.lng],{icon,zIndexOffset:isHq?1000:800});
+  m.bindPopup(`<div class="pt">${b.name}</div><div class="ptype">${isHq?'Hoofdkantoor':'Vestiging'}</div><div class="pbody">📍 ${b.address}</div>`);
+  m.addTo(map);
+  branchM[b.id]=m;
 });
 
-// ============================================================
-// SEB MARKERS (dynamic color based on radius)
-// ============================================================
-
-const typeLabels = { gemeente: 'Gemeente', grote_gemeente: 'Grote Gemeente', waterschap: 'Waterschap', semi: 'Semi-overheid' };
-
-function getSebMarkerSize(type) {
-  if (type === 'grote_gemeente') return 9;
-  if (type === 'semi') return 10;
-  if (type === 'waterschap') return 8;
-  return 7;
-}
-
-sebLocations.forEach(loc => {
-  const { location, distance } = getNearestKrinkels(loc);
-  loc.nearestKrinkels = location;
-  loc.nearestDist = distance;
-
-  const marker = L.circleMarker([loc.lat, loc.lng], {
-    radius: getSebMarkerSize(loc.type),
-    fillColor: '#00C853',
-    color: '#006B2D',
-    weight: 2,
-    fillOpacity: 1,
-  });
-
-  marker.bindPopup(''); // populated on click
-  marker.on('click', () => {
-    const inZone = loc.nearestDist <= currentRadiusKm;
-    const zoneText = inZone
-      ? `<span class="popup-seb-yes">✓ Binnen ${currentRadiusKm}km van ${loc.nearestKrinkels.name} (${loc.nearestDist} km)</span>`
-      : `<span class="popup-seb-no">✗ Buiten ${currentRadiusKm}km zone — dichtstbij: ${loc.nearestKrinkels.name} (${loc.nearestDist} km)</span>`;
-    marker.getPopup().setContent(`
-      <div class="popup-title">${loc.name}</div>
-      <div class="popup-type">${typeLabels[loc.type]} · SEB</div>
-      <div class="popup-body"><div class="popup-seb">${zoneText}</div></div>
-    `);
-  });
-
-  marker.addTo(map);
-  sebMarkerObjects[loc.name] = marker;
+const workM = {};
+workLocations.forEach(w=>{
+  const svg=workSvg(18);
+  const icon=L.divIcon({html:svg,iconSize:[18,18],iconAnchor:[9,9],className:''});
+  const m=L.marker([w.lat,w.lng],{icon,zIndexOffset:600});
+  m.bindPopup(`<div class="pt">${w.name}</div><div class="ptype">Werklocatie</div><div class="pbody">📍 ${w.address}</div>`);
+  m.addTo(map);
+  workM[w.id]=m;
 });
 
-// ============================================================
-// RADIUS CIRCLES + MARKER COLORS (dynamic)
-// ============================================================
+// ═══════════════════════════════════════
+// CIRCLES
+// ═══════════════════════════════════════
+const circles={};
+function redrawCircles(){
+  Object.values(circles).forEach(c=>{ if(map.hasLayer(c)) map.removeLayer(c); });
+  Object.keys(circles).forEach(k=>delete circles[k]);
 
-function updateRadius(km) {
-  currentRadiusKm = parseInt(km);
-  document.getElementById('radius-display').textContent = currentRadiusKm;
-  document.getElementById('radius-slider').value = currentRadiusKm;
-  document.getElementById('stat-radius-label').textContent = currentRadiusKm;
-
-  // Remove old circles
-  radiusCircles.forEach(c => map.removeLayer(c));
-  radiusCircles.length = 0;
-
-  // Draw new circles
-  krinkelsLocations.forEach(k => {
-    const circle = L.circle([k.lat, k.lng], {
-      radius: currentRadiusKm * 1000,
-      color: '#0066FF',
-      weight: 2.5,
-      fillColor: '#0066FF',
-      fillOpacity: 0.07,
-      dashArray: '8,5',
-      interactive: false,
-    });
-    circle.addTo(map);
-    radiusCircles.push(circle);
+  branches.forEach(b=>{
+    if(!bState[b.id].visible) return;
+    const c=L.circle([b.lat,b.lng],{radius:branchRadius*1000,color:'#3A7D44',weight:2.5,fillColor:'#3A7D44',fillOpacity:0.06,dashArray:'8,5',interactive:false});
+    c.addTo(map); circles['b'+b.id]=c;
+  });
+  workLocations.forEach(w=>{
+    if(!wState[w.id].visible) return;
+    const c=L.circle([w.lat,w.lng],{radius:workRadius*1000,color:'#C0580A',weight:2,fillColor:'#C0580A',fillOpacity:0.06,dashArray:'6,4',interactive:false});
+    c.addTo(map); circles['w'+w.id]=c;
   });
 
-  // Update SEB marker colors
-  let inCount = 0;
-  sebLocations.forEach(loc => {
-    const inZone = loc.nearestDist <= currentRadiusKm;
-    if (inZone) inCount++;
-    const marker = sebMarkerObjects[loc.name];
-    if (inZone) {
-      marker.setStyle({ fillColor: '#00C853', color: '#006B2D', weight: 2 });
-    } else {
-      marker.setStyle({ fillColor: '#FF1744', color: '#8B0000', weight: 2 });
-    }
+  updateSeb();
+}
+
+// ═══════════════════════════════════════
+// SEB
+// ═══════════════════════════════════════
+const typeLabels={gemeente:'Gemeente',grote_gemeente:'Grote Gemeente',waterschap:'Waterschap',semi:'Semi-overheid'};
+function mSize(t){return t==='grote_gemeente'?9:t==='semi'?10:t==='waterschap'?8:7;}
+
+const sebM={};
+sebLocations.forEach(loc=>{
+  const m=L.circleMarker([loc.lat,loc.lng],{radius:mSize(loc.type),fillColor:'#2E7D32',color:'#1B5E20',weight:2,fillOpacity:1});
+  m.bindPopup('');
+  m.on('click',()=>{
+    const {inZone,nearestName,nearestDist}=sebInfo(loc);
+    const txt=inZone
+      ?`<span class="pyes">✓ Binnen zone van ${nearestName} (${nearestDist} km)</span>`
+      :`<span class="pno">✗ Buiten alle zones — dichtstbij: ${nearestName} (${nearestDist} km)</span>`;
+    m.getPopup().setContent(`<div class="pt">${loc.name}</div><div class="ptype">${typeLabels[loc.type]} · SEB</div><div class="pbody"><div class="pseb">${txt}</div></div>`);
+    if(window.innerWidth<=640) closeSheet();
   });
+  m.addTo(map);
+  sebM[loc.name]=m;
+});
 
-  document.getElementById('stat-in').textContent = inCount;
-  document.getElementById('stat-total').textContent = sebLocations.length;
-  buildList();
+function sebInfo(loc){
+  let minDist=Infinity, nearestName='—', nearestDist=0, inZone=false;
+  branches.forEach(b=>{
+    if(!bState[b.id].visible) return;
+    const d=dist(b.lat,b.lng,loc.lat,loc.lng);
+    if(d<minDist){minDist=d;nearestName=b.name;nearestDist=Math.round(d);}
+    if(d<=branchRadius) inZone=true;
+  });
+  workLocations.forEach(w=>{
+    if(!wState[w.id].visible) return;
+    const d=dist(w.lat,w.lng,loc.lat,loc.lng);
+    if(d<minDist){minDist=d;nearestName=w.name;nearestDist=Math.round(d);}
+    if(d<=workRadius) inZone=true;
+  });
+  return {inZone,nearestName,nearestDist};
 }
 
-function setPreset(km, btn) {
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active-preset'));
-  btn.classList.add('active-preset');
-  updateRadius(km);
+function updateSeb(){
+  let inCount=0;
+  sebLocations.forEach(loc=>{
+    const {inZone}=sebInfo(loc);
+    if(inZone) inCount++;
+    sebM[loc.name].setStyle(inZone?{fillColor:'#2E7D32',color:'#1B5E20'}:{fillColor:'#C0392B',color:'#7B241C'});
+  });
+  document.getElementById('stat-in').textContent=inCount;
+  document.getElementById('stat-total').textContent=sebLocations.length;
+  buildPanel();
 }
 
-// ============================================================
-// SIDEBAR LIST
-// ============================================================
+// ═══════════════════════════════════════
+// RADIUS CONTROLS
+// ═══════════════════════════════════════
+function updateBranchRadius(km){
+  branchRadius=parseInt(km);
+  ['d','m'].forEach(s=>{
+    const sl=document.getElementById('slider-branch-'+s);
+    const dv=document.getElementById('disp-branch-'+s);
+    if(sl)sl.value=branchRadius;
+    if(dv)dv.textContent=branchRadius;
+  });
+  redrawCircles();
+}
+function updateWorkRadius(km){
+  workRadius=parseInt(km);
+  ['d','m'].forEach(s=>{
+    const sl=document.getElementById('slider-work-'+s);
+    const dv=document.getElementById('disp-work-'+s);
+    if(sl)sl.value=workRadius;
+    if(dv)dv.textContent=workRadius;
+  });
+  redrawCircles();
+}
+function setBPreset(km,btn){
+  document.querySelectorAll('.pb:not(.orange-pb)').forEach(b=>b.classList.remove('g-active'));
+  btn.classList.add('g-active');
+  updateBranchRadius(km);
+}
+function setWPreset(km,btn){
+  document.querySelectorAll('.pb.orange-pb').forEach(b=>b.classList.remove('o-active'));
+  btn.classList.add('o-active');
+  updateWorkRadius(km);
+}
 
-let currentFilter = 'all';
-let currentSearch = '';
+// ═══════════════════════════════════════
+// PANEL
+// ═══════════════════════════════════════
+let filter='all', search='';
 
-// Initial draw
-updateRadius(50);
-// Set correct preset button
-document.querySelectorAll('.preset-btn')[1].classList.add('active-preset');
-document.querySelectorAll('.preset-btn')[0].classList.remove('active-preset');
+function buildPanel(){
+  ['d','m'].forEach(pid=>{
+    const panel=document.getElementById('panel-'+pid);
+    if(!panel) return;
+    panel.innerHTML='';
 
-function buildList() {
-  const listEl = document.getElementById('location-list');
-  listEl.innerHTML = '';
+    // ── Branches ──
+    const bSection=document.createElement('div');
+    bSection.className='toggle-section';
+    const bHead=document.createElement('div');
+    bHead.className='toggle-section-title';bHead.textContent='Vestigingen & Hoofdkantoor';
+    bSection.appendChild(bHead);
 
-  if (currentFilter === 'all' || currentFilter === 'krinkels') {
-    const label = document.createElement('div');
-    label.className = 'section-label';
-    label.textContent = 'Krinkels Locaties';
-    listEl.appendChild(label);
-
-    krinkelsLocations.forEach(k => {
-      if (currentSearch && !k.name.toLowerCase().includes(currentSearch) && !k.city.toLowerCase().includes(currentSearch)) return;
-      const item = document.createElement('div');
-      item.className = 'location-item';
-      item.innerHTML = `
-        <div class="loc-dot" style="background:${k.type==='hq'?'#FFD600':'#FF6B00'}; border:1.5px solid #333"></div>
-        <div class="loc-name">${k.city}</div>
-        <span class="loc-badge badge-${k.type==='hq'?'hq':'branch'}">${k.type==='hq'?'HQ':'Vest.'}</span>
-      `;
-      item.addEventListener('click', () => {
-        map.flyTo([k.lat, k.lng], 11, { duration: 1 });
-        krinkelsMarkers[k.name].openPopup();
-        highlightItem(item);
+    branches.forEach(b=>{
+      const on=bState[b.id].visible;
+      const row=document.createElement('div');
+      row.className='toggle-row '+(on?'on':'off');
+      row.dataset.bid=b.id;
+      const fill=b.type==='hq'?'#1E4229':'#3A7D44';
+      row.innerHTML=`<div class="t-swatch" style="background:${fill}"></div>
+        <div style="flex:1;min-width:0"><div class="t-label">${b.name}</div></div>
+        <div class="t-sw"></div>`;
+      row.addEventListener('click',()=>{
+        bState[b.id].visible=!bState[b.id].visible;
+        const v=bState[b.id].visible;
+        document.querySelectorAll(`.toggle-row[data-bid="${b.id}"]`).forEach(el=>{el.classList.toggle('on',v);el.classList.toggle('off',!v);});
+        v ? branchM[b.id].addTo(map) : map.removeLayer(branchM[b.id]);
+        updateKCount();
+        redrawCircles();
       });
-      listEl.appendChild(item);
+      bSection.appendChild(row);
     });
-  }
+    panel.appendChild(bSection);
 
-  const types = currentFilter === 'krinkels' ? [] : ['grote_gemeente', 'gemeente', 'waterschap', 'semi'];
-  const typeTitles = { grote_gemeente: 'Grote Gemeenten', gemeente: 'Gemeenten', waterschap: 'Waterschappen', semi: 'Semi-overheden' };
+    // ── Work locations ──
+    const wSection=document.createElement('div');
+    wSection.className='toggle-section';
+    const wHead=document.createElement('div');
+    wHead.className='toggle-section-title';wHead.textContent='Werklocaties';
+    wSection.appendChild(wHead);
 
-  types.forEach(type => {
-    const items = sebLocations.filter(loc => {
-      if (loc.type !== type) return false;
-      const inZone = loc.nearestDist <= currentRadiusKm;
-      if (currentFilter === 'in' && !inZone) return false;
-      if (currentFilter === 'out' && inZone) return false;
-      if (currentSearch && !loc.name.toLowerCase().includes(currentSearch)) return false;
-      return true;
-    });
-    if (!items.length) return;
-
-    const inZoneItems = items.filter(i => i.nearestDist <= currentRadiusKm);
-    const label = document.createElement('div');
-    label.className = 'section-label';
-    label.textContent = `${typeTitles[type]} (${inZoneItems.length}/${items.length} in zone)`;
-    listEl.appendChild(label);
-
-    items.forEach(loc => {
-      const inZone = loc.nearestDist <= currentRadiusKm;
-      const item = document.createElement('div');
-      item.className = 'location-item';
-      item.innerHTML = `
-        <div class="loc-dot" style="background:${inZone?'#00C853':'#FF1744'}"></div>
-        <div class="loc-name">${loc.name}</div>
-        <span class="loc-badge ${inZone?'badge-in':'badge-out'}">${inZone?'✓ Zone':'✗ Ver'}</span>
-      `;
-      item.addEventListener('click', () => {
-        map.flyTo([loc.lat, loc.lng], 11, { duration: 1 });
-        sebMarkerObjects[loc.name].openPopup();
-        highlightItem(item);
+    workLocations.forEach(w=>{
+      const on=wState[w.id].visible;
+      const row=document.createElement('div');
+      row.className='toggle-row work-row '+(on?'on':'off');
+      row.dataset.wid=w.id;
+      row.innerHTML=`<div class="t-swatch" style="background:var(--k-work);border-radius:2px"></div>
+        <div style="flex:1;min-width:0">
+          <div class="t-label" style="font-size:11px;color:var(--k-work)">${w.name}</div>
+          <div class="t-sub">${w.address.split(',')[0]}</div>
+        </div>
+        <div class="t-sw" style="${on?'background:var(--k-work)':''}"></div>`;
+      row.addEventListener('click',()=>{
+        wState[w.id].visible=!wState[w.id].visible;
+        const v=wState[w.id].visible;
+        document.querySelectorAll(`.toggle-row[data-wid="${w.id}"]`).forEach(el=>{
+          el.classList.toggle('on',v);el.classList.toggle('off',!v);
+          el.querySelector('.t-sw').style.background=v?'var(--k-work)':'';
+        });
+        v ? workM[w.id].addTo(map) : map.removeLayer(workM[w.id]);
+        updateKCount();
+        redrawCircles();
       });
-      listEl.appendChild(item);
+      wSection.appendChild(row);
     });
+    panel.appendChild(wSection);
+
+    // ── SEB list ──
+    const sebDiv=document.createElement('div');
+    sebDiv.className='seb-list';
+
+    [['grote_gemeente','Grote Gemeenten'],['gemeente','Gemeenten'],['waterschap','Waterschappen'],['semi','Semi-overheden']].forEach(([type,title])=>{
+      const items=sebLocations.filter(loc=>{
+        if(loc.type!==type) return false;
+        if(search&&!loc.name.toLowerCase().includes(search)) return false;
+        const {inZone}=sebInfo(loc);
+        if(filter==='in'&&!inZone) return false;
+        if(filter==='out'&&inZone) return false;
+        return true;
+      });
+      if(!items.length) return;
+      const inC=items.filter(l=>sebInfo(l).inZone).length;
+      const lbl=document.createElement('div');lbl.className='sec-label';lbl.textContent=`${title} (${inC}/${items.length})`;
+      sebDiv.appendChild(lbl);
+      items.forEach(loc=>{
+        const {inZone}=sebInfo(loc);
+        const row=document.createElement('div');row.className='loc-row';
+        row.innerHTML=`<div class="l-dot" style="background:${inZone?'#2E7D32':'#C0392B'}"></div><div class="l-name">${loc.name}</div><span class="l-badge ${inZone?'badge-in':'badge-out'}">${inZone?'✓ Zone':'✗ Ver'}</span>`;
+        row.addEventListener('click',()=>{
+          map.flyTo([loc.lat,loc.lng],11,{duration:1});
+          const {inZone:iz,nearestName:nn,nearestDist:nd}=sebInfo(loc);
+          const txt=iz?`<span class="pyes">✓ Binnen zone van ${nn} (${nd} km)</span>`:`<span class="pno">✗ Buiten alle zones — dichtstbij: ${nn} (${nd} km)</span>`;
+          sebM[loc.name].getPopup().setContent(`<div class="pt">${loc.name}</div><div class="ptype">${typeLabels[loc.type]} · SEB</div><div class="pbody"><div class="pseb">${txt}</div></div>`);
+          sebM[loc.name].openPopup();
+          if(pid==='m') closeSheet();
+        });
+        sebDiv.appendChild(row);
+      });
+    });
+    panel.appendChild(sebDiv);
   });
 }
 
-function highlightItem(el) {
-  document.querySelectorAll('.location-item').forEach(i => i.classList.remove('active-item'));
-  el.classList.add('active-item');
+function updateKCount(){
+  const bv=branches.filter(b=>bState[b.id].visible).length;
+  const wv=workLocations.filter(w=>wState[w.id].visible).length;
+  document.getElementById('stat-krinkels').textContent=bv+wv;
 }
 
-function setFilter(filter, btn) {
-  currentFilter = filter;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  buildList();
+function setFilter(f,btn){
+  filter=f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>{if(t.getAttribute('onclick')===`setFilter('${f}',this)`)t.classList.add('active');});
+  buildPanel();
 }
 
-function filterSearch(val) {
-  currentSearch = val.toLowerCase();
-  buildList();
+function filterSearch(val){
+  search=val.toLowerCase();
+  document.querySelectorAll('#search-d,#search-m').forEach(i=>{if(i.value!==val)i.value=val;});
+  buildPanel();
 }
+
+// ═══════════════════════════════════════
+// MOBILE SHEET
+// ═══════════════════════════════════════
+function openSheet(){document.getElementById('sheet').classList.add('open');document.getElementById('overlay').style.display='block';}
+function closeSheet(){document.getElementById('sheet').classList.remove('open');document.getElementById('overlay').style.display='none';}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+updateKCount();
+redrawCircles();
 </script>
 </body>
 </html>
